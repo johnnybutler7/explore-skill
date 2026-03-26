@@ -1,0 +1,7 @@
+interface:
+  display_name: "Explore Skill"
+  short_description: "Inspect and draft in Explore"
+  default_prompt: "Use $explore to inspect the current Explore profile state, then draft or preview the safest next change."
+
+policy:
+  allow_implicit_invocation: true
