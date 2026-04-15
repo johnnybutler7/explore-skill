@@ -15,7 +15,10 @@ Use this skill when you need to inspect or operate Explore account/profile state
    Read-only by slug: use `profile inspect` or `content list` with `--slug`.
    Owner-only: use `--account` with the signed-in session or trusted API key.
    If Explore has `api.v1_key` configured, slug-scoped reads such as `profile inspect --slug ...` and `content list --slug ...` still work without `EXPLORE_API_KEY`.
-   Owner-only commands still require `EXPLORE_API_KEY` / `--api-key` or a signed-in session.
+   Owner-only commands can reuse credentials saved with `explore setup` or `explore login --account ...`, and still accept `EXPLORE_API_KEY` / `--api-key` or a signed-in session.
+   For first-run or reconnecting work in Codex, run `explore setup` in your own terminal first so the browser handoff happens there, not in chat.
+   If you already know you want the explicit existing-account login path, use `explore login --account ...`.
+   If you do not want Explore to launch a browser automatically, use `explore setup --no-browser` or `explore login --no-browser --account ...` and open the printed URL yourself.
    The trusted API key is app-level, not account-specific, and is stored at `api.v1_key`.
 2. Read first.
    Start with `explore profile inspect ... --json`.
@@ -50,6 +53,9 @@ Use this skill when you need to inspect or operate Explore account/profile state
 ## Command patterns
 
 ```bash
+explore setup
+explore login --account acme-careers
+explore whoami --json
 explore profile inspect --slug johnny --json
 explore content list --slug johnny --json
 explore content create-draft --account acme-careers --input tmp/draft.json --json
