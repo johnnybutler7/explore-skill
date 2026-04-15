@@ -1,41 +1,68 @@
 # Explore
 
-Use this skill when you need to inspect or operate Explore account/profile state through the official agent surface.
+Use this skill when you need to use Explore from Codex through the official agent surface.
 
 ## Goals
 
+- default to a natural-language-first Codex workflow
 - identify whether the task is read-only or owner-only
 - inspect before proposing changes
+- translate simple asks into the right underlying CLI workflow
 - prefer proposal/draft-only actions over live mutation
 - never publish unless the user explicitly asks and a future publish surface exists
 
 ## Default workflow
 
-1. Decide the context.
-   Read-only by slug: use `profile inspect` or `content list` with `--slug`.
-   Owner-only: use `--account` with the signed-in session or trusted API key.
-   If Explore has `api.v1_key` configured, slug-scoped reads such as `profile inspect --slug ...` and `content list --slug ...` still work without `EXPLORE_API_KEY`.
-   Owner-only commands can reuse credentials saved with `explore setup` or `explore login --account ...`, and still accept `EXPLORE_API_KEY` / `--api-key` or a signed-in session.
-   For first-run or reconnecting work in Codex, run `explore setup` in your own terminal first so the browser handoff happens there, not in chat.
-   If you already know you want the explicit existing-account login path, use `explore login --account ...`.
-   If you do not want Explore to launch a browser automatically, use `explore setup --no-browser` or `explore login --no-browser --account ...` and open the printed URL yourself.
-   The trusted API key is app-level, not account-specific, and is stored at `api.v1_key`.
-2. Read first.
-   Start with `explore profile inspect ... --json`.
-3. Check workflow state when the task touches setup or readiness.
-   Use `explore onboarding status ... --json`.
-4. Check sync health before suggesting launch or copy changes sourced from Notion.
-   Use `explore notion sync-status ... --json`.
-5. When safe next actions matter, use `explore manifest next-actions ... --json`.
-6. If suggesting a change, preserve the user's tone and structure.
-7. Prefer `explore content propose-update ... --input <file.json> --json` over any live mutation.
-8. If the user wants a new content item prepared inside Explore, prefer `explore content create-draft ... --input <file.json> --json`.
-9. If the task touches an existing draft, inspect it first with `explore drafts list` and `explore drafts inspect`.
-10. If the task asks what a draft would change, use `explore drafts apply-preview ... --json` before describing impact.
-11. If the user explicitly wants the reviewed draft turned into real Explore data, use `explore drafts apply ... --json`.
-12. If an open draft needs refinement, use `explore drafts update ... --input <file.json> --json`.
-13. If a draft is stale or superseded, use `explore drafts archive` instead of deleting or publishing it.
-14. If you are working from this app repo directly, `bin/explore` is still a local wrapper around the same CLI.
+1. Start with the simple Codex story.
+   The normal user path is:
+   install the Explore CLI, install this skill, run `explore setup`, complete browser auth only when needed, then continue in natural language.
+   Prefer the same sample asks the app recommends:
+   - `Set up Explore`
+   - `Inspect my Explore profile`
+   - `Import my CV into Explore`
+   - `Pull in my blog or website and shape the profile`
+   - `Show me my public profile`
+   - `Update my summary and links`
+2. Translate the ask into the right Explore workflow.
+   Read-only by slug: inspect public profile/content first.
+   Owner-only: reuse the signed-in session created by `explore setup` or explicit login.
+   For first-run or reconnecting work in Codex, have the user run `explore setup` in their own terminal so the browser handoff happens there, not in chat.
+3. Keep inspect-first safety where it matters.
+   Start with current state before proposing changes.
+   Check onboarding/sync/readiness state when the request touches setup, launch, or imported content.
+4. Use the profile document as the normal structured update path.
+   For CV import, blog/website shaping, summary updates, and link updates, the normal flow is:
+   export -> edit/map structured content -> validate -> apply.
+5. Prefer proposal and draft flows over live mutation when the task calls for a staged change.
+6. Only drop to low-level flags or manual auth/token flows when the user explicitly needs advanced or scripted control.
+
+## Natural-language mapping
+
+- `Set up Explore`
+  Run or resume `explore setup`; browser auth only when needed.
+- `Inspect my Explore profile`
+  Inspect public profile/content first, then owner-only state only if the task requires it.
+- `Import my CV into Explore`
+  Use the profile document flow and preserve structure/tone.
+- `Pull in my blog or website and shape the profile`
+  Use the profile document flow and map structured content into the right sections.
+- `Show me my public profile`
+  Inspect or preview the public result, depending on whether the task is public-read or owner-preview.
+- `Update my summary and links`
+  Inspect current state first, then use the profile document flow or a proposal path.
+
+## Profile document flow
+
+Treat this as the normal V1 update path for profile work:
+
+1. export the profile document
+2. edit or map structured content into it
+3. validate the document
+4. apply the validated result back to Explore
+
+When the request is “import my CV,” “pull in my blog,” “update my summary,” or “update my links,” this is usually the right underlying workflow.
+
+If the task is better handled as a staged draft or proposal, use the draft/proposal surfaces instead of mutating live state directly.
 
 ## Safety rules
 
@@ -50,7 +77,18 @@ Use this skill when you need to inspect or operate Explore account/profile state
 - If sync is stale or failed, say that clearly before suggesting review or sharing.
 - Use manifest/next-actions when present instead of inventing a workflow recommendation.
 
-## Command patterns
+## Advanced CLI reference
+
+Use this section when you intentionally need low-level operator control, explicit account selection, script-friendly JSON output, or manual fallback behavior.
+
+- If Explore has `api.v1_key` configured, slug-scoped reads such as `profile inspect --slug ...` and `content list --slug ...` still work without `EXPLORE_API_KEY`.
+- Owner-only commands can reuse credentials saved with `explore setup` or `explore login --account ...`, and still accept `EXPLORE_API_KEY` / `--api-key` or a signed-in session.
+- If you already know you need the explicit existing-account login path, use `explore login --account ...`.
+- If you do not want Explore to launch a browser automatically, use `explore setup --no-browser` or `explore login --no-browser --account ...` and open the printed URL yourself.
+- The trusted API key is app-level, not account-specific, and is stored at `api.v1_key`.
+- If you are working from the app repo directly, `bin/explore` is still a local wrapper around the same CLI.
+
+### Command patterns
 
 ```bash
 explore setup
