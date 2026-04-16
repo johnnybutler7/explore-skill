@@ -1,3 +1,8 @@
+---
+name: "explore"
+description: "Use when you need to inspect or operate Explore account/profile state through the official agent surface."
+---
+
 # Explore
 
 Use this skill when you need to inspect or operate Explore account/profile state through the official agent surface.
