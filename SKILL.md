@@ -11,9 +11,10 @@ Use this skill when you need to inspect or operate Explore account/profile state
 
 - identify whether the task is read-only or owner-only
 - inspect before proposing changes
-- use the live V1 setup path by default
+- use the live setup path by default
 - keep the user-facing ask intent-led and natural-language-first
 - use the local profile YAML workflow as a normal, encouraged path for precise or bulk changes
+- guide profile edits through the current shared-owner-safe workflow
 - never publish unless the user explicitly asks and a future publish surface exists
 
 ## Default workflow
@@ -49,26 +50,32 @@ Use this skill when you need to inspect or operate Explore account/profile state
    - "I made some edits, please update my profile on Explore."
    - "Open my profile file and help me tighten my summary and experience."
 9. Do not over-push CV import when direct local profile editing is the cleaner route.
-10. Do not make primary sample prompts lead with `export`, `map`, `validate`, or `apply` unless the user is already in an explicit file-edit or manual workflow.
+10. Do not make primary sample prompts lead with `export`, `validate`, `preview`, or `apply` unless the user is already in an explicit file-edit or manual workflow.
 11. When you need to implement a profile change through the direct-edit path, use the local profile YAML as the normal editable surface underneath.
-12. Export the current document with `explore export profile --account <slug> --format yaml > profile.yaml`.
-13. Let the user edit `profile.yaml` directly when they want to.
-14. Validate with `explore validate profile.yaml`.
-15. Apply with `explore apply profile.yaml --account <slug>`.
-16. After a successful profile-changing action, proactively return:
+12. Export the current document with `explore export profile --account <slug> --output tmp/profile.yml --json`.
+13. Let the user edit `tmp/profile.yml` directly when they want to.
+14. Validate with `explore validate tmp/profile.yml --json`.
+15. Preview with `explore preview profile tmp/profile.yml --account <slug> --json`.
+16. If preview returns a recommended apply command, prefer using it directly.
+17. Otherwise apply with `explore apply tmp/profile.yml --account <slug> --expected-fingerprint <fingerprint> --json`.
+18. If preview says `No live changes detected.`, stop there instead of applying unchanged content.
+19. After a successful profile-changing action, proactively return:
    - a short success confirmation
    - the public profile URL when it can be derived confidently
    - the preview URL too when it is available and useful
    - at most one short next step
-17. Do not add profile links by default for read-only inspect/list actions unless they are especially helpful.
-18. Use draft/proposal commands only when the task specifically needs those narrower surfaces.
-19. If you are working from this app repo directly, `bin/explore` is still a local wrapper around the same CLI.
+20. Do not add profile links by default for read-only inspect/list actions unless they are especially helpful.
+21. Use draft/proposal commands only when the task specifically needs those narrower surfaces.
+22. If you are working from this app repo directly, `bin/explore` is still a local wrapper around the same CLI.
 
 ## Safety rules
 
 - Never treat slug-scoped profile/content reads as permission to access private onboarding or sync state.
 - Never assume owner-only commands can use public slug access; onboarding, sync, manifest, publish preview, draft commands, and change proposals still need owner auth.
 - Never skip inspect-first review before applying a profile document change.
+- Never skip `preview profile` before a profile apply unless the user explicitly asks for a lower-level manual path.
+- Never apply a profile document without the expected fingerprint from the immediately preceding preview.
+- When `preview profile` returns a recommended apply command, prefer it over reconstructing the apply command manually.
 - Never assume arbitrary source material maps cleanly; keep the mapped result structured, validate it, and explain any unsupported gaps honestly.
 - Never assume Explore has a full draft publishing model yet.
 - `publish preview` explains impact and blockers; it does not publish.
@@ -85,12 +92,15 @@ Use this skill when you need to inspect or operate Explore account/profile state
 ```bash
 explore setup
 explore login --account acme-careers
+explore commands --json
+explore preview profile --help --agent
 explore whoami --json
 explore profile inspect --slug johnny --json
 explore content list --slug johnny --json
-explore export profile --account acme-careers --format yaml > profile.yaml
-explore validate profile.yaml
-explore apply profile.yaml --account acme-careers
+explore export profile --account acme-careers --output tmp/profile.yml --json
+explore validate tmp/profile.yml --json
+explore preview profile tmp/profile.yml --account acme-careers --json
+explore apply tmp/profile.yml --account acme-careers --expected-fingerprint <fingerprint> --json
 explore onboarding status --account acme-careers --json
 explore manifest next-actions --account acme-careers --json
 explore notion sync-status --account acme-careers --json
@@ -101,10 +111,12 @@ explore publish preview --account acme-careers --json
 
 Use this as a normal, encouraged workflow when the user wants bulk edits, precise control, or easy review of the profile document they are changing:
 
-1. `explore export profile --account <slug> --format yaml > profile.yaml`
-2. open `profile.yaml` locally so the user can edit it directly, or help them refine the document in place
-3. `explore validate profile.yaml`
-4. `explore apply profile.yaml --account <slug>`
+1. `explore export profile --account <slug> --output tmp/profile.yml --json`
+2. open `tmp/profile.yml` locally so the user can edit it directly, or help them refine the document in place
+3. `explore validate tmp/profile.yml --json`
+4. `explore preview profile tmp/profile.yml --account <slug> --json`
+5. if preview returns a recommended apply command, prefer using it directly
+6. otherwise use `explore apply tmp/profile.yml --account <slug> --expected-fingerprint <fingerprint> --json`
 
 Use that flow for:
 
@@ -117,7 +129,7 @@ Keep the user-facing wording intent-led even when you choose this path:
 
 - offer to open the Explore profile YAML locally
 - let the user edit it directly when they want hands-on control
-- then validate and apply the changes back to Explore
+- then validate, preview, and apply the changes back to Explore
 
 Keep the browser role light:
 

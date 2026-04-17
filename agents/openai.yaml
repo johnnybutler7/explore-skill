@@ -1,7 +1,7 @@
 interface:
   display_name: "Explore Skill"
-  short_description: "Inspect and draft in Explore"
-  default_prompt: "Use $explore to inspect the current Explore profile state, then draft or preview the safest next change."
+  short_description: "Inspect and update Explore safely from Codex"
+  default_prompt: "Use $explore to inspect the current Explore profile state, then use the safest live workflow for the requested change: export, edit locally, validate, preview, and only apply explicitly with the expected fingerprint."
 
 policy:
   allow_implicit_invocation: true
