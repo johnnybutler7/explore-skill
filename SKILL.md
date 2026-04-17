@@ -8,6 +8,7 @@ Use this skill when you need to use Explore from Codex through the official agen
 - identify whether the task is read-only or owner-only
 - inspect before proposing changes
 - translate simple asks into the right underlying CLI workflow
+- guide profile edits through the current shared-owner-safe workflow
 - prefer proposal/draft-only actions over live mutation
 - never publish unless the user explicitly asks and a future publish surface exists
 
@@ -32,7 +33,8 @@ Use this skill when you need to use Explore from Codex through the official agen
    Check onboarding/sync/readiness state when the request touches setup, launch, or imported content.
 4. Use the profile document as the normal structured update path.
    For CV import, blog/website shaping, summary updates, and link updates, the normal flow is:
-   export -> edit/map structured content -> validate -> apply.
+   export -> edit/map structured content -> validate -> preview -> apply with expected fingerprint.
+   Treat `preview profile` as the normal non-mutating review step before any live apply.
 5. Prefer proposal and draft flows over live mutation when the task calls for a staged change.
 6. Only drop to low-level flags or manual auth/token flows when the user explicitly needs advanced or scripted control.
 
@@ -58,9 +60,21 @@ Treat this as the normal V1 update path for profile work:
 1. export the profile document
 2. edit or map structured content into it
 3. validate the document
-4. apply the validated result back to Explore
+4. preview the live diff without mutating anything
+5. apply explicitly with the expected fingerprint from preview
 
 When the request is “import my CV,” “pull in my blog,” “update my summary,” or “update my links,” this is usually the right underlying workflow.
+
+Prefer these command patterns when driving the workflow directly:
+
+1. `explore export profile --account <account> --output tmp/profile.yml --json`
+2. edit `tmp/profile.yml` locally
+3. `explore validate tmp/profile.yml --json`
+4. `explore preview profile tmp/profile.yml --account <account> --json`
+5. if preview returns a recommended apply command, prefer using it directly
+6. otherwise use `explore apply tmp/profile.yml --account <account> --expected-fingerprint <fingerprint> --json`
+
+If preview says `No live changes detected.`, stop there instead of applying unchanged content.
 
 If the task is better handled as a staged draft or proposal, use the draft/proposal surfaces instead of mutating live state directly.
 
@@ -68,6 +82,9 @@ If the task is better handled as a staged draft or proposal, use the draft/propo
 
 - Never treat slug-scoped profile/content reads as permission to access private onboarding or sync state.
 - Never assume owner-only commands can use public slug access; onboarding, sync, manifest, publish preview, draft commands, and change proposals still need owner auth.
+- Never skip `preview profile` before a profile apply unless the user explicitly asks for a lower-level manual path.
+- Never apply a profile document without the expected fingerprint from the immediately preceding preview.
+- When `preview profile` returns a recommended apply command, prefer it over reconstructing the apply command manually.
 - Never assume Explore has a full draft publishing model yet.
 - `publish preview` explains impact and blockers; it does not publish.
 - If onboarding is blocked, explain:
@@ -81,6 +98,7 @@ If the task is better handled as a staged draft or proposal, use the draft/propo
 
 Use this section when you intentionally need low-level operator control, explicit account selection, script-friendly JSON output, or manual fallback behavior.
 
+- When Codex needs to inspect the current CLI surface, prefer `explore commands --json` and `explore <command> --help --agent`.
 - If Explore has `api.v1_key` configured, slug-scoped reads such as `profile inspect --slug ...` and `content list --slug ...` still work without `EXPLORE_API_KEY`.
 - Owner-only commands can reuse credentials saved with `explore setup` or `explore login --account ...`, and still accept `EXPLORE_API_KEY` / `--api-key` or a signed-in session.
 - If you already know you need the explicit existing-account login path, use `explore login --account ...`.
@@ -93,8 +111,14 @@ Use this section when you intentionally need low-level operator control, explici
 ```bash
 explore setup
 explore login --account acme-careers
+explore commands --json
+explore preview profile --help --agent
 explore whoami --json
 explore profile inspect --slug johnny --json
+explore export profile --account acme-careers --output tmp/profile.yml --json
+explore validate tmp/profile.yml --json
+explore preview profile tmp/profile.yml --account acme-careers --json
+explore apply tmp/profile.yml --account acme-careers --expected-fingerprint <fingerprint> --json
 explore content list --slug johnny --json
 explore content create-draft --account acme-careers --input tmp/draft.json --json
 explore drafts list --account acme-careers --json
